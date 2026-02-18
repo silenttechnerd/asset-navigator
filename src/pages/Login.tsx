@@ -1,13 +1,22 @@
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Monitor } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
 
-  const handleMicrosoftLogin = () => {
-    // TODO: Wire up Supabase Azure OAuth
-    navigate("/select-company");
+  const handleMicrosoftLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "azure",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        scopes: "openid profile email",
+      },
+    });
+    if (error) {
+      console.error("OAuth error:", error.message);
+    }
   };
 
   return (

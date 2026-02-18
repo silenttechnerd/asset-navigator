@@ -1,14 +1,13 @@
 import { useNavigate } from "react-router-dom";
-import { useCompany, Company } from "@/context/CompanyContext";
-import { Button } from "@/components/ui/button";
+import { useCompany, Membership } from "@/context/CompanyContext";
 import { Building2, ChevronRight, Monitor } from "lucide-react";
 
 const SelectCompany = () => {
   const navigate = useNavigate();
-  const { companies, setSelectedCompany } = useCompany();
+  const { memberships, setSelectedCompany } = useCompany();
 
-  const handleSelect = (company: Company) => {
-    setSelectedCompany(company);
+  const handleSelect = (membership: Membership) => {
+    setSelectedCompany(membership);
     navigate("/dashboard");
   };
 
@@ -26,18 +25,18 @@ const SelectCompany = () => {
         </div>
 
         <div className="space-y-3">
-          {companies.map((company) => (
+          {memberships.map((m) => (
             <button
-              key={company.id}
-              onClick={() => handleSelect(company)}
+              key={m.id}
+              onClick={() => handleSelect(m)}
               className="group flex w-full items-center gap-4 rounded-xl border border-sidebar-border bg-sidebar-accent p-4 text-left transition-all hover:border-primary hover:bg-sidebar-accent/80"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-sidebar-border">
                 <Building2 className="h-6 w-6 text-sidebar-foreground" />
               </div>
               <div className="flex-1">
-                <p className="font-semibold text-sidebar-primary-foreground">{company.name}</p>
-                <p className="text-sm text-sidebar-foreground">{company.domain} · {company.role.replace("_", " ")}</p>
+                <p className="font-semibold text-sidebar-primary-foreground">{m.companies.name}</p>
+                <p className="text-sm text-sidebar-foreground">{m.companies.domain} · {m.role.replace("_", " ")}</p>
               </div>
               <ChevronRight className="h-5 w-5 text-sidebar-foreground transition-transform group-hover:translate-x-0.5" />
             </button>
