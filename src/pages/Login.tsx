@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -10,21 +10,9 @@ const Login = () => {
   const [searchParams] = useSearchParams();
   const unauthorized = searchParams.get("error") === "unauthorized";
 
-  const handleMicrosoftLogin = async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "azure",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        scopes: "email profile openid offline_access",
-        queryParams: {
-          response_type: "code",
-          prompt: "select_account",
-        },
-      },
-    });
-    if (error) {
-      console.error("OAuth error:", error.message);
-    }
+  const handleMicrosoftLogin = () => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    window.location.href = `${supabaseUrl}/functions/v1/azure-auth-start`;
   };
 
   return (
