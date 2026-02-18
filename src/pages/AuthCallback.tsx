@@ -11,59 +11,69 @@ const AuthCallback = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleCallback = async () => {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    // Listen for auth state changes — this fires after the client
+    // processes the hash tokens from the magic-link redirect.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === "SIGNED_IN" && session) {
+          try {
+            // Profile & membership already created by azure-auth-callback,
+            // just reload memberships into context.
+            await loadMemberships();
 
-      if (sessionError || !session) {
-        setError("Authentication failed. Please try again.");
-        return;
-      }
+            // Check how many memberships to decide where to navigate
+            const { data: memberships } = await supabase
+              .from("company_memberships")
+              .select("id, company_id, role, companies(id, name, domain)")
+              .eq("user_id", session.user.id);
 
-      try {
-        // Call post-login-hook edge function
-        const { data, error: fnError } = await supabase.functions.invoke(
-          "post-login-hook",
-          {
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-            },
+            if (!memberships || memberships.length === 0) {
+              await supabase.auth.signOut();
+              setError("No company memberships found for your account.");
+              return;
+            }
+
+            if (memberships.length > 1) {
+              navigate("/select-company", { replace: true });
+            } else {
+              navigate("/dashboard", { replace: true });
+            }
+          } catch (err) {
+            console.error("AuthCallback error:", err);
+            setError("Something went wrong. Please try again.");
           }
-        );
-
-        if (fnError) {
-          // Check if it's a 403 from the function
-          const body = typeof fnError === "object" && "context" in fnError
-            ? (fnError as any).context
-            : null;
-
-          await supabase.auth.signOut();
-          setError("Access denied: your email domain is not authorized.");
-          return;
         }
-
-        const memberships = data?.memberships;
-
-        if (!memberships || memberships.length === 0) {
-          await supabase.auth.signOut();
-          setError("No company memberships found for your account.");
-          return;
-        }
-
-        // Reload memberships in context
-        await loadMemberships();
-
-        if (memberships.length > 1) {
-          navigate("/select-company", { replace: true });
-        } else {
-          navigate("/dashboard", { replace: true });
-        }
-      } catch (err) {
-        await supabase.auth.signOut();
-        setError("Access denied: your email domain is not authorized.");
       }
-    };
+    );
 
-    handleCallback();
+    // Also check if there's already a session (in case event already fired)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        // Trigger the same logic by re-emitting
+        loadMemberships().then(async () => {
+          const { data: memberships } = await supabase
+            .from("company_memberships")
+            .select("id, company_id, role, companies(id, name, domain)")
+            .eq("user_id", session.user.id);
+
+          if (!memberships || memberships.length === 0) {
+            await supabase.auth.signOut();
+            setError("No company memberships found for your account.");
+            return;
+          }
+
+          if (memberships.length > 1) {
+            navigate("/select-company", { replace: true });
+          } else {
+            navigate("/dashboard", { replace: true });
+          }
+        }).catch(() => {
+          setError("Something went wrong. Please try again.");
+        });
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [navigate, loadMemberships]);
 
   if (error) {
