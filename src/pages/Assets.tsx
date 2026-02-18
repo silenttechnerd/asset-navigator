@@ -1,153 +1,247 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Search, Filter, Download, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Plus, Search, Filter, Package } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { useCompany } from "@/context/CompanyContext";
+import { useAssets, AssetFilters } from "@/hooks/useAssets";
 
-const statusColors: Record<string, string> = {
-  assigned: "bg-info/10 text-info border-info/20",
-  in_stock: "bg-success/10 text-success border-success/20",
-  assigned_pending_signature: "bg-warning/10 text-warning border-warning/20",
-  in_repair: "bg-destructive/10 text-destructive border-destructive/20",
-  retired: "bg-muted text-muted-foreground border-border",
+const STATUS_COLORS: Record<string, string> = {
+  in_stock: "bg-green-100 text-green-800",
+  assigned: "bg-blue-100 text-blue-800",
+  assigned_pending_signature: "bg-yellow-100 text-yellow-800",
+  in_repair: "bg-orange-100 text-orange-800",
+  lost: "bg-red-100 text-red-800",
+  stolen: "bg-red-200 text-red-900",
+  retired: "bg-gray-100 text-gray-600",
+  disposed: "bg-gray-200 text-gray-500",
 };
 
-const mockAssets = [
-  { id: "1", asset_tag: "AST-001234", serial_number: "C02ZN1ABMD6M", category: "Laptop", make: "Apple", model: "MacBook Pro 16\"", status: "assigned", assigned_to: "Sarah Johnson", location: "HQ - Floor 2" },
-  { id: "2", asset_tag: "AST-001235", serial_number: "F17YQHJ0GRY3", category: "Phone", make: "Apple", model: "iPhone 15 Pro", status: "assigned_pending_signature", assigned_to: "Mike Chen", location: "HQ - Floor 1" },
-  { id: "3", asset_tag: "AST-001236", serial_number: "PF3NXWZ2", category: "Laptop", make: "Dell", model: "Latitude 5540", status: "in_stock", assigned_to: null, location: "IT Storage" },
-  { id: "4", asset_tag: "AST-001237", serial_number: "5CD2345JKL", category: "Laptop", make: "Lenovo", model: "ThinkPad X1 Carbon", status: "in_repair", assigned_to: null, location: "Vendor - CompuFix" },
-  { id: "5", asset_tag: "AST-001238", serial_number: "MXL1234ABC", category: "Monitor", make: "Dell", model: "U2723QE 27\"", status: "assigned", assigned_to: "Lisa Williams", location: "HQ - Floor 3" },
-  { id: "6", asset_tag: "AST-001239", serial_number: "CN0H5TRK742", category: "Docking Station", make: "Dell", model: "WD22TB4", status: "in_stock", assigned_to: null, location: "IT Storage" },
-  { id: "7", asset_tag: "AST-001240", serial_number: "F2LXKJ7HG8YQ", category: "Phone", make: "Samsung", model: "Galaxy S24", status: "assigned", assigned_to: "Tom Davis", location: "Remote" },
-  { id: "8", asset_tag: "AST-001241", serial_number: "C02AB1CDEF12", category: "Laptop", make: "Apple", model: "MacBook Air M3", status: "retired", assigned_to: null, location: "Warehouse" },
+const STATUS_LABELS: Record<string, string> = {
+  in_stock: "In Stock",
+  assigned: "Assigned",
+  assigned_pending_signature: "Pending Sig",
+  in_repair: "In Repair",
+  lost: "Lost",
+  stolen: "Stolen",
+  retired: "Retired",
+  disposed: "Disposed",
+};
+
+const CATEGORIES = [
+  "Laptop", "Desktop", "Monitor", "Phone", "Tablet",
+  "Printer", "Peripheral", "Network", "Tool", "Other",
 ];
 
-const Assets = () => {
-  const { userRole } = useCompany();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-
-  const canWrite = userRole !== "read_only";
-
-  const filtered = mockAssets.filter((a) => {
-    const matchSearch =
-      a.asset_tag.toLowerCase().includes(search.toLowerCase()) ||
-      a.serial_number.toLowerCase().includes(search.toLowerCase()) ||
-      a.model.toLowerCase().includes(search.toLowerCase()) ||
-      (a.assigned_to?.toLowerCase().includes(search.toLowerCase()) ?? false);
-    const matchStatus = statusFilter === "all" || a.status === statusFilter;
-    return matchSearch && matchStatus;
+export default function Assets() {
+  const { selectedCompany, userRole } = useCompany();
+  const [filters, setFilters] = useState<AssetFilters>({
+    search: "", status: "all", category: "all", assigned: "all",
   });
+  const [searchInput, setSearchInput] = useState("");
+
+  const { assets, loading, total } = useAssets(selectedCompany?.company_id, filters);
+
+  const canWrite = userRole && ["system_admin", "company_admin", "it_staff"].includes(userRole);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFilters((f) => ({ ...f, search: searchInput }));
+  };
+
+  const setFilter = (key: keyof AssetFilters, value: string) => {
+    setFilters((f) => ({ ...f, [key]: value }));
+  };
 
   return (
-    <div className="p-6 lg:p-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Assets</h1>
-          <p className="text-sm text-muted-foreground">{mockAssets.length} total assets</p>
+          <h1 className="text-2xl font-bold tracking-tight">Assets</h1>
+          <p className="text-sm text-muted-foreground">
+            {total} asset{total !== 1 ? "s" : ""} in {selectedCompany?.companies.name}
+          </p>
         </div>
         {canWrite && (
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Upload className="h-4 w-4" /> Import
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Download className="h-4 w-4" /> Export
-            </Button>
-            <Button size="sm" className="gap-2" asChild>
-              <Link to="/assets/new">
-                <Plus className="h-4 w-4" /> Add Asset
-              </Link>
-            </Button>
-          </div>
+          <Button asChild>
+            <Link to="/assets/new">
+              <Plus className="mr-2 h-4 w-4" /> Add Asset
+            </Link>
+          </Button>
         )}
       </div>
 
-      {/* Filters */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search by tag, serial, model, or employee..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-44">
-            <Filter className="mr-2 h-4 w-4" />
+      {/* Search + Filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <form onSubmit={handleSearch} className="flex flex-1 gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search tag, serial, IMEI, phone…"
+              className="pl-9"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+          </div>
+          <Button type="submit" variant="secondary">Search</Button>
+        </form>
+
+        <Select value={filters.status} onValueChange={(v) => setFilter("status", v)}>
+          <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="assigned">Assigned</SelectItem>
-            <SelectItem value="in_stock">In Stock</SelectItem>
-            <SelectItem value="assigned_pending_signature">Pending Signature</SelectItem>
-            <SelectItem value="in_repair">In Repair</SelectItem>
-            <SelectItem value="retired">Retired</SelectItem>
+            {Object.entries(STATUS_LABELS).map(([v, l]) => (
+              <SelectItem key={v} value={v}>{l}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
+
+        <Select value={filters.category} onValueChange={(v) => setFilter("category", v)}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {CATEGORIES.map((c) => (
+              <SelectItem key={c} value={c}>{c}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={filters.assigned} onValueChange={(v) => setFilter("assigned", v)}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Assignment" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="assigned">Assigned</SelectItem>
+            <SelectItem value="unassigned">Unassigned</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {(filters.search || filters.status !== "all" || filters.category !== "all" || filters.assigned !== "all") && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setFilters({ search: "", status: "all", category: "all", assigned: "all" });
+              setSearchInput("");
+            }}
+          >
+            Clear filters
+          </Button>
+        )}
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Asset Tag</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Device</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Serial</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Assigned To</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Location</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((asset) => (
-                <tr
-                  key={asset.id}
-                  className="border-b border-border transition-colors last:border-0 hover:bg-muted/30"
-                >
-                  <td className="px-4 py-3">
-                    <Link to={`/assets/${asset.id}`} className="font-medium text-primary hover:underline">
-                      {asset.asset_tag}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-foreground">
-                    {asset.make} {asset.model}
-                  </td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{asset.serial_number}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusColors[asset.status]}`}>
-                      {asset.status.replace(/_/g, " ")}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-foreground">{asset.assigned_to ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{asset.location}</td>
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/50">
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Asset Tag</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Category</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Make / Model</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Assigned To</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Location</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Warranty</th>
+                  <th className="px-4 py-3"></th>
                 </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
-                    No assets found matching your criteria
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              </thead>
+              <tbody>
+                {loading ? (
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <tr key={i} className="border-b border-border">
+                      {Array.from({ length: 8 }).map((_, j) => (
+                        <td key={j} className="px-4 py-3"><Skeleton className="h-5 w-full" /></td>
+                      ))}
+                    </tr>
+                  ))
+                ) : assets.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-16 text-center">
+                      <Package className="mx-auto h-10 w-10 text-muted-foreground" />
+                      <p className="mt-2 text-sm text-muted-foreground">No assets found</p>
+                      {canWrite && (
+                        <Button asChild variant="link" className="mt-1">
+                          <Link to="/assets/new">Add your first asset</Link>
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ) : (
+                  assets.map((asset) => {
+                    const warrantyDate = asset.warranty_end_date
+                      ? new Date(asset.warranty_end_date)
+                      : null;
+                    const warrantyExpiring =
+                      warrantyDate &&
+                      warrantyDate > new Date() &&
+                      warrantyDate < new Date(Date.now() + 30 * 86400000);
+                    const warrantyExpired = warrantyDate && warrantyDate < new Date();
+
+                    return (
+                      <tr key={asset.id} className="border-b border-border transition-colors last:border-0 hover:bg-muted/30">
+                        <td className="px-4 py-3">
+                          <Link to={`/assets/${asset.id}`} className="font-medium text-primary hover:underline">
+                            {asset.asset_tag}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3">{asset.category}</td>
+                        <td className="px-4 py-3">
+                          {[asset.make, asset.model].filter(Boolean).join(" ") || "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[asset.status] ?? "bg-gray-100 text-gray-600"}`}>
+                            {STATUS_LABELS[asset.status] ?? asset.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          {asset.employees
+                            ? `${asset.employees.first_name} ${asset.employees.last_name}`
+                            : "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          {asset.locations?.name ?? "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          {warrantyDate ? (
+                            <span className={warrantyExpired ? "text-destructive" : warrantyExpiring ? "text-yellow-600" : "text-muted-foreground"}>
+                              {warrantyDate.toLocaleDateString()}
+                            </span>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Button asChild variant="ghost" size="sm">
+                            <Link to={`/assets/${asset.id}`}>View</Link>
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-};
-
-export default Assets;
+}
