@@ -11,11 +11,15 @@ const Login = () => {
   const unauthorized = searchParams.get("error") === "unauthorized";
 
   const handleMicrosoftLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "azure",
       options: {
-        redirectTo: window.location.origin + "/auth/callback",
-        scopes: "email profile openid",
+        redirectTo: `${window.location.origin}/auth/callback`,
+        scopes: "email profile openid offline_access",
+        queryParams: {
+          response_type: "code",
+          prompt: "select_account",
+        },
       },
     });
     if (error) {
