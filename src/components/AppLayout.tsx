@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useCompany } from "@/context/CompanyContext";
+import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard, Monitor, Package, Users, MapPin, FileSpreadsheet,
   Settings, LogOut, Building2, ChevronDown,
@@ -18,10 +19,11 @@ const navItems = [
 ];
 
 const AppLayout = () => {
-  const { selectedCompany, companies, setSelectedCompany, userRole } = useCompany();
+  const { selectedCompany, memberships, setSelectedCompany, userRole } = useCompany();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     navigate("/login");
   };
 
@@ -45,20 +47,20 @@ const AppLayout = () => {
                 <Building2 className="h-4 w-4 text-sidebar-foreground" />
                 <div className="flex-1 truncate">
                   <p className="truncate text-sm font-medium text-sidebar-primary-foreground">
-                    {selectedCompany?.name}
+                    {selectedCompany?.companies?.name ?? "Select company"}
                   </p>
                 </div>
                 <ChevronDown className="h-4 w-4 text-sidebar-foreground" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
-              {companies.map((c) => (
+              {memberships.map((m) => (
                 <DropdownMenuItem
-                  key={c.id}
-                  onClick={() => setSelectedCompany(c)}
-                  className={c.id === selectedCompany?.id ? "bg-accent" : ""}
+                  key={m.id}
+                  onClick={() => setSelectedCompany(m)}
+                  className={m.company_id === selectedCompany?.company_id ? "bg-accent" : ""}
                 >
-                  {c.name}
+                  {m.companies.name}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>

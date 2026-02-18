@@ -35,7 +35,7 @@ const Dashboard = () => {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">{selectedCompany?.name} — Overview</p>
+        <p className="text-sm text-muted-foreground">{selectedCompany?.companies?.name} — Overview</p>
       </div>
 
       {/* KPI Cards */}
