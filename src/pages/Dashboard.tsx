@@ -12,7 +12,7 @@ const Dashboard = () => {
 
   if (!selectedCompany) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center p-6">
+      <div className="flex items-center justify-center h-full">
         <p className="text-muted-foreground">Select a company to view the dashboard.</p>
       </div>
     );
@@ -28,81 +28,67 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground">
           {selectedCompany.companies.name} — Overview
         </p>
       </div>
 
-      {/* KPI Cards */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {kpiCards.map((kpi) => (
-          <Card key={kpi.label} className="animate-fade-in border-border">
-            <CardContent className="flex items-start gap-4 p-5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                <kpi.icon className="h-5 w-5 text-primary" />
+          <Card key={kpi.label}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <kpi.icon className="h-5 w-5 text-muted-foreground" />
               </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">{kpi.label}</p>
+              <div className="mt-3">
+                <p className="text-sm text-muted-foreground">{kpi.label}</p>
                 {stats.loading ? (
-                  <Skeleton className="mt-1 h-7 w-16" />
+                  <Skeleton className="h-8 w-16 mt-1" />
                 ) : (
-                  <p className="text-2xl font-bold text-foreground">{kpi.value}</p>
+                  <p className="text-3xl font-bold">{kpi.value}</p>
                 )}
-                <p className="text-xs text-muted-foreground">{kpi.sub}</p>
+                <p className="text-xs text-muted-foreground mt-1">{kpi.sub}</p>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-5">
-        {/* Pending Signatures Table */}
-        <Card className="lg:col-span-3">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-base">Pending Signatures</CardTitle>
-            <Link to="/assets?filter=pending_signatures" className="text-xs font-medium text-primary hover:underline">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Pending Signatures</CardTitle>
+            <Link to="/assets?filter=pending_signatures" className="text-sm text-primary hover:underline">
               View All
             </Link>
           </CardHeader>
           <CardContent>
             {stats.loading ? (
               <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
+                {[1,2,3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
               </div>
             ) : stats.pendingForms.length === 0 ? (
-              <p className="py-4 text-center text-sm text-muted-foreground">
-                No pending signatures
-              </p>
+              <p className="text-sm text-muted-foreground">No pending signatures</p>
             ) : (
               <div className="space-y-3">
                 {stats.pendingForms.map((form) => {
                   const emp = form.assignments?.employees;
-                  const empName = emp
-                    ? `${emp.first_name} ${emp.last_name}`
-                    : "Unknown Employee";
-                  const assetLabel = form.assets
-                    ? `${form.assets.make} ${form.assets.model}`
-                    : "Unknown Asset";
+                  const empName = emp ? `${emp.first_name} ${emp.last_name}` : "Unknown Employee";
+                  const assetLabel = form.assets ? `${form.assets.make} ${form.assets.model}` : "Unknown Asset";
                   return (
-                    <div key={form.id} className="flex items-center justify-between rounded-lg border border-border p-3">
+                    <div key={form.id} className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-foreground">{empName}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {assetLabel} · {form.assets?.asset_tag}
-                        </p>
+                        <p className="text-sm font-medium">{empName}</p>
+                        <p className="text-xs text-muted-foreground">{assetLabel} · {form.assets?.asset_tag}</p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={form.type === "issuance" ? "default" : "secondary"}>
+                      <div className="text-right">
+                        <Badge variant="outline">
                           {form.type === "issuance" ? "Issue" : "Return"}
                         </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {timeAgo(form.created_at)}
-                        </span>
+                        <p className="text-xs text-muted-foreground mt-1">{timeAgo(form.created_at)}</p>
                       </div>
                     </div>
                   );
@@ -112,38 +98,28 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Recent Activity */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Recent Activity</CardTitle>
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
             {stats.loading ? (
               <div className="space-y-3">
-                {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
+                {[1,2,3,4].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
               </div>
             ) : stats.recentEvents.length === 0 ? (
-              <p className="py-4 text-center text-sm text-muted-foreground">
-                No recent activity
-              </p>
+              <p className="text-sm text-muted-foreground">No recent activity</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {stats.recentEvents.map((event) => (
-                  <div key={event.id} className="flex gap-3">
-                    <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                  <div key={event.id} className="flex items-start gap-3">
+                    <div className="h-2 w-2 mt-1.5 rounded-full bg-primary" />
                     <div>
-                      <p className="text-sm font-medium text-foreground">
-                        {formatEventType(event.event_type)}
-                      </p>
+                      <p className="text-sm font-medium">{formatEventType(event.event_type)}</p>
                       <p className="text-xs text-muted-foreground">
-                        {event.assets?.asset_tag}
-                        {event.profiles?.full_name ? ` · ${event.profiles.full_name}` : ""}
+                        {event.assets?.asset_tag}{event.profiles?.full_name ? ` · ${event.profiles.full_name}` : ""}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {timeAgo(event.created_at)}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{timeAgo(event.created_at)}</p>
                     </div>
                   </div>
                 ))}
