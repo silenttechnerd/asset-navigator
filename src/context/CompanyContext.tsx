@@ -8,7 +8,6 @@ export interface Membership {
   companies: {
     id: string;
     name: string;
-    domain: string;
   };
 }
 
@@ -38,9 +37,9 @@ export const CompanyProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("company_memberships")
-      .select("id, company_id, role, companies(id, name, domain)");
+    const { data, error } = await (supabase as any)
+      .from("memberships")
+      .select("id, company_id, role, companies(id, name)");
 
     if (!error && data) {
       // Cast the data since the generated types may not match our interface exactly
