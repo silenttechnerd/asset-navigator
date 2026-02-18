@@ -15,6 +15,10 @@ import Employees from "@/pages/Employees";
 import Locations from "@/pages/Locations";
 import Reports from "@/pages/Reports";
 import AdminCompanies from "@/pages/AdminCompanies";
+import SignForm from "@/pages/SignForm";
+import AssetDetail from "@/pages/AssetDetail";
+import EmployeeDetail from "@/pages/EmployeeDetail";
+import LocationDetail from "@/pages/LocationDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,14 +34,18 @@ const App = () => (
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/sign/:companyId/:signingUrlId" element={<SignForm />} />
             {/* Protected routes */}
             <Route element={<ProtectedRoute />}>
               <Route path="/select-company" element={<SelectCompany />} />
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/assets" element={<Assets />} />
+                <Route path="/assets/:id" element={<AssetDetail />} />
                 <Route path="/employees" element={<Employees />} />
+                <Route path="/employees/:id" element={<EmployeeDetail />} />
                 <Route path="/locations" element={<Locations />} />
+                <Route path="/locations/:id" element={<LocationDetail />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/admin/companies" element={<AdminCompanies />} />
               </Route>
