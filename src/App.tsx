@@ -18,6 +18,7 @@ import AdminCompanies from "@/pages/AdminCompanies";
 import SignForm from "@/pages/SignForm";
 import AssetDetail from "@/pages/AssetDetail";
 import EmployeeDetail from "@/pages/EmployeeDetail";
+import EmployeeNew from "@/pages/EmployeeNew";
 import LocationDetail from "@/pages/LocationDetail";
 import NotFound from "./pages/NotFound";
 
@@ -43,6 +44,7 @@ const App = () => (
                 <Route path="/assets" element={<Assets />} />
                 <Route path="/assets/:id" element={<AssetDetail />} />
                 <Route path="/employees" element={<Employees />} />
+                <Route path="/employees/new" element={<EmployeeNew />} />
                 <Route path="/employees/:id" element={<EmployeeDetail />} />
                 <Route path="/locations" element={<Locations />} />
                 <Route path="/locations/:id" element={<LocationDetail />} />
