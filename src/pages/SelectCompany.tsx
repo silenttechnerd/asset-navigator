@@ -36,7 +36,7 @@ const SelectCompany = () => {
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-sidebar-primary-foreground">{m.companies.name}</p>
-                <p className="text-sm text-sidebar-foreground">{m.role.replace("_", " ")}</p>
+                <p className="text-sm text-sidebar-foreground capitalize">{m.role.replace(/_/g, " ")}</p>
               </div>
               <ChevronRight className="h-5 w-5 text-sidebar-foreground transition-transform group-hover:translate-x-0.5" />
             </button>
