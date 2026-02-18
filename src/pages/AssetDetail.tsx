@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import AssignModal from "@/components/AssignModal";
 import CheckInModal from "@/components/CheckInModal";
+import SendFormModal from "@/components/SendFormModal";
 
 const AssetDetail = () => {
   const { id } = useParams();
@@ -15,6 +16,11 @@ const AssetDetail = () => {
   const [loading, setLoading] = useState(true);
   const [assignOpen, setAssignOpen] = useState(false);
   const [checkInOpen, setCheckInOpen] = useState(false);
+  const [sendFormOpen, setSendFormOpen] = useState(false);
+
+  const currentAssignment = asset?.active_assignment_id
+    ? { id: asset.active_assignment_id, employees: asset.employees }
+    : null;
 
   const canWrite = userRole && ["system_admin", "company_admin", "it_staff"].includes(userRole);
 
@@ -75,6 +81,11 @@ const AssetDetail = () => {
           {canWrite && asset.assigned_to_employee_id && (
             <Button variant="outline" onClick={() => setCheckInOpen(true)}>Check In</Button>
           )}
+          {canWrite && currentAssignment && (
+            <Button size="sm" variant="outline" onClick={() => setSendFormOpen(true)}>
+              Send Form
+            </Button>
+          )}
         </div>
       </div>
 
@@ -108,6 +119,16 @@ const AssetDetail = () => {
             onSuccess={() => { setCheckInOpen(false); window.location.reload(); }}
           />
         </>
+      )}
+      {asset && currentAssignment && (
+        <SendFormModal
+          open={sendFormOpen}
+          onClose={() => setSendFormOpen(false)}
+          asset={{ id: asset.id, asset_tag: asset.asset_tag, company_id: asset.company_id }}
+          assignmentId={currentAssignment.id}
+          employeeEmail={currentAssignment.employees?.email ?? ""}
+          onSuccess={() => setSendFormOpen(false)}
+        />
       )}
     </div>
   );
